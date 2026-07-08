@@ -573,7 +573,10 @@ async function downloadVideoCard() {
       ? '<div class="class-content">📝 ' + escHtml(record.classContent.length > 60 ? record.classContent.slice(0, 60) + '...' : record.classContent) + '</div>'
       : '';
 
-    const students = getAllStudents(currentClass);
+    const students = getAllStudents(currentClass).filter(s => {
+      const cfg = getStudentCfg(currentClass, s.name);
+      return !cfg || !cfg.leftDate;
+    });
     let sesDone = 0, sesTotal = 0;
     const items = students.map((s, i) => {
       const submitted = record.submissions[s.name] || false;
