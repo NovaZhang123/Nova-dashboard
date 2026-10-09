@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova 英语工作看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"
+        onerror="var s=document.createElement('script');s.src='https://unpkg.com/xlsx@0.20.3/dist/xlsx.full.min.js';s.onerror=function(){window._xlsxLoadFailed=true};document.head.appendChild(s);"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="logo">📋</div>
+    <div>
+      <h1>Nova 英语工作看板</h1>
+      <div class="subtitle">打卡 · 作业 · 排名 · 周报 · 出勤</div>
+    </div>
+  </div>
+  <div class="controls" id="headerControls"></div>
+</header>
+
+<main class="main">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('listening')">📅 打卡追踪</button>
+    <button class="tab-btn" onclick="switchTab('video')">📝 复述作业</button>
+    <button class="tab-btn" onclick="switchTab('ranking')">🏆 排名奖励</button>
+    <button class="tab-btn" onclick="switchTab('report')">📊 周报</button>
+    <button class="tab-btn" onclick="switchTab('attendance')">👥 出勤</button>
+    <button class="tab-btn" onclick="switchTab('calendar')">📅 周待办</button>
+  </div>
+  <div class="tab-content active" id="tab-listening"><div id="listeningContent"></div></div>
+  <div class="tab-content" id="tab-video"><div id="videoContent"></div></div>
+  <div class="tab-content" id="tab-ranking"><div id="rankingContent"></div></div>
+  <div class="tab-content" id="tab-report"><div id="reportContent"></div></div>
+  <div class="tab-content" id="tab-attendance"><div id="attendanceContent"></div></div>
+  <div class="tab-content" id="tab-calendar"><div id="calendarContent"></div></div>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="dl-container" id="dlContainer"></div>
+
+<!-- Daily Check-in Report Modal -->
+<div class="report-overlay hidden" id="reportModal" onclick="if(event.target===this)closeReportModal()">
+  <div class="report-card">
+    <div class="report-header">
+      <span class="report-title">📋 今日打卡报告</span>
+      <button class="report-close" onclick="closeReportModal()">&times;</button>
+    </div>
+    <div class="report-body">
+      <div class="report-class-tabs" id="reportClassTabs"></div>
+      <div class="report-summary" id="reportSummary"></div>
+      <textarea class="report-textarea" id="reportTextarea" readonly></textarea>
+      <div class="report-actions">
+        <button class="btn btn-outline" onclick="copyReportText()">📋 复制文案</button>
+        <button class="btn btn-outline" onclick="previewReportCard()" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;">📸 预览卡片</button>
+        <button class="btn btn-primary" onclick="closeReportModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Card Preview Overlay -->
+<div class="report-overlay hidden" id="cardPreviewOverlay" onclick="if(event.target===this)closeCardPreview()">
+  <div class="card-preview-wrap" id="cardPreviewWrap" onclick="event.stopPropagation()">
+    <div style="text-align:right;padding:0 8px 8px 0;">
+      <button onclick="closeCardPreview()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b;">&times;</button>
+    </div>
+    <div class="card-preview-body" id="cardPreviewBody"></div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-outline" onclick="doDownloadReportCard()" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;font-size:15px;padding:10px 32px;">⬇️ 下载图片</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden card preview for html2canvas rendering -->
+<div class="video-card-preview" id="cardPreview"></div>
+
+<!-- Heatmap overlay -->
+<div class="heatmap-overlay hidden" id="heatmapOverlay" onclick="closeHeatmap(event)">
+  <div class="heatmap-card" id="heatmapCard" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- Late submission modal -->
+<div class="late-modal-overlay hidden" id="lateModalOverlay" onclick="closeLateModal(event)">
+  <div class="late-modal-card" onclick="event.stopPropagation()">
+    <h3>📥 添加补交记录</h3>
+    <div class="field">
+      <label>学生</label>
+      <select id="lateStudent"></select>
+    </div>
+    <div class="field">
+      <label>课程类型</label>
+      <select id="lateType">
+        <option value="new">新课</option>
+        <option value="review">复习课</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>原课程日期</label>
+      <input type="date" id="lateDate" />
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">选择那节课原本的上课日期</div>
+    </div>
+    <div class="actions">
+      <button class="btn-ghost" onclick="closeLateModal()">取消</button>
+      <button class="btn-primary" onclick="confirmLateSubmit()">确认添加</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="js/config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/tab-listening.js"></script>
+<script src="js/tab-video.js"></script>
+<script src="js/tab-ranking.js"></script>
+<script src="js/tab-report.js"></script>
+<script src="js/tab-attendance.js"></script>
+<script src="js/data-io.js"></script>
+<script src="js/downloads.js"></script>
+<script src="js/init.js"></script>
+</body>
+</html>
